@@ -37,6 +37,7 @@
 #include <linux/slab.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
+#include <linux/of_gpio.h>
 #include <linux/io.h>
 #include <linux/dma-mapping.h>
 
@@ -241,6 +242,9 @@ struct imx_port {
 	unsigned int            saved_reg[10];
 #define DMA_TX_IS_WORKING 1
 	unsigned long		flags;
+
+	int					uart4_rs485_dir_gpio;
+	int					uart5_rs485_dir_gpio;
 };
 
 struct imx_port_ucrs {
@@ -248,6 +252,8 @@ struct imx_port_ucrs {
 	unsigned int	ucr2;
 	unsigned int	ucr3;
 };
+
+static struct imx_port *imx_ports[UART_NR];
 
 static struct imx_uart_data imx_uart_devdata[] = {
 	[IMX1_UART] = {
@@ -406,6 +412,15 @@ static void imx_stop_tx(struct uart_port *port)
 		temp = readl(port->membase + UCR4);
 		temp &= ~UCR4_TCEN;
 		writel(temp, port->membase + UCR4);
+	}
+
+	if (sport == imx_ports[3]) {
+		while(!(readl(sport->port.membase + USR2) & USR2_TXDC));
+		gpio_set_value(sport->uart4_rs485_dir_gpio, 0);
+	}
+	if (sport == imx_ports[4]) {
+		while(!(readl(sport->port.membase + USR2) & USR2_TXDC));
+		gpio_set_value(sport->uart5_rs485_dir_gpio, 0);
 	}
 }
 
@@ -595,6 +610,13 @@ static void imx_start_tx(struct uart_port *port)
 	struct imx_port *sport = (struct imx_port *)port;
 	unsigned long temp;
 
+	if (sport == imx_ports[3]) {
+		gpio_set_value(sport->uart4_rs485_dir_gpio, 1);
+	}
+	if (sport == imx_ports[4]) {
+		gpio_set_value(sport->uart5_rs485_dir_gpio, 1);
+	}
+
 	if (port->rs485.flags & SER_RS485_ENABLED) {
 		/* enable transmitter and shifter empty irq */
 		temp = readl(port->membase + UCR2);
@@ -679,7 +701,7 @@ static irqreturn_t imx_rxint(int irq, void *dev_id)
 			if (uart_handle_break(&sport->port))
 				continue;
 		}
-
+	
 		if (uart_handle_sysrq_char(&sport->port, (unsigned char)rx))
 			continue;
 
@@ -1147,8 +1169,10 @@ static int imx_startup(struct uart_port *port)
 
 	/* Can we enable the DMA support? */
 	if (is_imx6q_uart(sport) && !uart_console(port)
-		&& !sport->dma_is_inited)
+		//&& !sport->dma_is_inited) {
+		&& !sport->dma_is_inited && (sport != imx_ports[3]) && (sport != imx_ports[4])) {
 		imx_uart_dma_init(sport);
+	}
 
 	if (sport->dma_is_inited)
 		INIT_DELAYED_WORK(&sport->tsk_dma_tx, dma_tx_work);
@@ -1631,7 +1655,6 @@ static struct uart_ops imx_pops = {
 #endif
 };
 
-static struct imx_port *imx_ports[UART_NR];
 
 #ifdef CONFIG_SERIAL_IMX_CONSOLE
 static void imx_console_putchar(struct uart_port *port, int ch)
@@ -2055,6 +2078,42 @@ static int serial_imx_probe(struct platform_device *pdev)
 	}
 
 	imx_ports[sport->port.line] = sport;
+	
+	/* uart4 for rs485 */
+	if (sport == imx_ports[3]) {
+		sport->uart4_rs485_dir_gpio = of_get_named_gpio(pdev->dev.of_node, "rs485-dir-gpio", 0);
+		if (gpio_is_valid(sport->uart4_rs485_dir_gpio)) {
+			dev_info(&pdev->dev, "uart4 for rs485 direction gpio is ok\n");
+			ret = devm_gpio_request(&pdev->dev, sport->uart4_rs485_dir_gpio, "rs485-dir-gpio");
+			if (ret) {
+				dev_err(&pdev->dev, "devm_gpio_request uart4 for rs485 direction gpio failed\n");
+				return -EBUSY;
+			}
+		}
+		else
+			dev_err(&pdev->dev, "uart4 for rs485 direction gpio failed\n");
+
+		gpio_direction_output(sport->uart4_rs485_dir_gpio, 0);
+		//gpio_set_value(sport->uart4_rs485_dir_gpio, 1);
+	}
+
+	/* uart5 for rs485 */
+	if (sport == imx_ports[4]) {
+		sport->uart5_rs485_dir_gpio = of_get_named_gpio(pdev->dev.of_node, "rs485-dir-gpio", 0);
+		if (gpio_is_valid(sport->uart5_rs485_dir_gpio)) {
+			dev_info(&pdev->dev, "uart5 for rs485 direction gpio is ok\n");
+			ret = devm_gpio_request(&pdev->dev, sport->uart5_rs485_dir_gpio, "rs485-dir-gpio");
+			if (ret) {
+				dev_err(&pdev->dev, "devm_gpio_request uart4 for rs485 direction gpio failed\n");
+				return -EBUSY;
+			}
+		}
+		else
+			dev_err(&pdev->dev, "uart5 for rs485 direction gpio failed\n");
+
+		gpio_direction_output(sport->uart5_rs485_dir_gpio, 0);
+		//gpio_set_value(sport->uart5_rs485_dir_gpio, 1);
+	}
 
 	platform_set_drvdata(pdev, sport);
 

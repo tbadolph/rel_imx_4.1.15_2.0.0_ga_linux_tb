@@ -66,6 +66,7 @@ int arch_show_interrupts(struct seq_file *p, int prec)
  */
 void handle_IRQ(unsigned int irq, struct pt_regs *regs)
 {
+	pr_err("handle_IRQ\n");
 	__handle_domain_irq(NULL, irq, false, regs);
 }
 

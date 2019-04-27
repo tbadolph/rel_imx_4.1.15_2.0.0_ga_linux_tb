@@ -908,6 +908,8 @@ static int spi_imx_sdma_init(struct device *dev, struct spi_imx_data *spi_imx,
 	spi_imx->rx_wml = spi_imx->rx_config.src_maxburst;
 	spi_imx->tx_wml = spi_imx->tx_config.dst_maxburst;
 	spi_imx->dma_is_inited = 1;
+	
+	printk("liyf: spi dma init\n");
 
 	return 0;
 err:

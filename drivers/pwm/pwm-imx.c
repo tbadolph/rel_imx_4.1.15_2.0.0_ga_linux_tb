@@ -291,6 +291,7 @@ static int imx_pwm_probe(struct platform_device *pdev)
 				PTR_ERR(imx->clk_per));
 		return PTR_ERR(imx->clk_per);
 	}
+	dev_info(&pdev->dev, "per clock rate: %lu\n", clk_get_rate(imx->clk_per));
 
 	imx->clk_ipg = devm_clk_get(&pdev->dev, "ipg");
 	if (IS_ERR(imx->clk_ipg)) {
@@ -298,6 +299,7 @@ static int imx_pwm_probe(struct platform_device *pdev)
 				PTR_ERR(imx->clk_ipg));
 		return PTR_ERR(imx->clk_ipg);
 	}
+	dev_info(&pdev->dev, "ipg clock rate: %lu\n", clk_get_rate(imx->clk_ipg));
 
 	imx->chip.ops = &imx_pwm_ops;
 	imx->chip.dev = &pdev->dev;

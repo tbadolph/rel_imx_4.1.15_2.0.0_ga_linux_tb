@@ -3532,6 +3532,9 @@ fec_probe(struct platform_device *pdev)
 		goto failed_clk;
 	}
 
+	dev_info(&pdev->dev, "ipg clock rate: %lu\n", clk_get_rate(fep->clk_ipg));
+	dev_info(&pdev->dev, "ahb clock rate: %lu\n", clk_get_rate(fep->clk_ahb));
+
 	fep->itr_clk_rate = clk_get_rate(fep->clk_ahb);
 
 	/* enet_out is optional, depends on board */
