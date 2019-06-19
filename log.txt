@@ -140,3 +140,27 @@
 				Device Drivers  --->
 					[*] Real Time Clock  --->
 						<*>   Philips PCF8563/Epson RTC8564
+
+
+18
+	..config - Linux/arm 4.9.11 Kernel Configuration
+ 		> Kernel Features ────────────────────────────────────────────────────
+       ┌────────────────────── Preemption Model ───────────────────────┐
+       │  Use the arrow keys to navigate this window or press the      │  
+       │  hotkey of the item you wish to select followed by the <SPACE │  
+       │  BAR>. Press <?> for additional information about this        │  
+       │ ┌───────────────────────────────────────────────────────────┐ │  
+       │ │       ( ) No Forced Preemption (Server)                   │ │  
+       │ │       ( ) Voluntary Kernel Preemption (Desktop)           │ │  
+       │ │       ( ) Preemptible Kernel (Low-Latency Desktop)        │ │  
+       │ │       ( ) Preemptible Kernel (Basic RT)                   │ │  
+       │ │       (X) Fully Preemptible Kernel (RT)                   │ │  
+       │ │                                                           │ │  
+       │ └───────────────────────────────────────────────────────────┘ │  
+       ├───────────────────────────────────────────────────────────────┤  
+       │                    <Select>      < Help >                     │  
+       └───────────────────────────────────────────────────────────────┘  
+
+19. 
+
+

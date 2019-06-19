@@ -20,7 +20,7 @@ menuconfig USB_SERIAL
 if USB_SERIAL
 
 config USB_SERIAL_CONSOLE
-	bool "USB Serial Console device support"
+	tristate "USB Serial Console device support"
 	depends on USB_SERIAL=y
 	---help---
 	  If you say Y here, it will be possible to use a USB to serial
@@ -43,7 +43,7 @@ config USB_SERIAL_CONSOLE
 	  If unsure, say N.
 
 config USB_SERIAL_GENERIC
-	bool "USB Generic Serial Driver"
+	tristate "USB Generic Serial Driver"
 	help
 	  Say Y here if you want to use the generic USB serial driver.  Please
 	  read <file:Documentation/usb/usb-serial.txt> for more information on
