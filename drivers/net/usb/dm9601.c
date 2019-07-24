@@ -242,7 +242,7 @@ static void dm_write_reg_async(struct usbnet *dev, u8 reg, u8 value)
 static int dm_read_shared_word(struct usbnet *dev, int phy, u8 reg, __le16 *value)
 {
 	int ret, i;
-  u16 *tmpwPtr1;
+  	u16 *tmpwPtr1;
 
 	mutex_lock(&dev->phy_mutex);
 
@@ -290,6 +290,14 @@ static int dm_read_shared_word(struct usbnet *dev, int phy, u8 reg, __le16 *valu
 	mutex_unlock(&dev->phy_mutex);
 	return ret;
 }
+
+
+static void __dm9601_set_mac_address(struct usbnet *dev)
+{
+	dm_write_async(dev, DM_PHY_ADDR, ETH_ALEN, dev->net->dev_addr);
+}
+
+
 
 static int dm_write_shared_word(struct usbnet *dev, int phy, u8 reg, __le16 value)
 {
@@ -382,7 +390,7 @@ static int dm9620_set_eeprom(struct net_device *net,
 	int len = eeprom->len;
 	int done;
 	
-//	dm9620_print(dev, "EEPROM: magic value, magic = 0x%x offset =0x%x data = 0x%x ",eeprom->magic, eeprom->offset,*data);
+	//dm9620_print(dev, "#########EEPROM: magic value, magic = 0x%x offset =0x%x data = 0x%x ",eeprom->magic, eeprom->offset,*data);
 	if (eeprom->magic != MD96XX_EEPROM_MAGIC) {
 		dm9620_print(dev, "EEPROM: magic value mismatch, magic = 0x%x",
 			eeprom->magic);	
@@ -644,6 +652,8 @@ static int dm9620_bind(struct usbnet *dev, struct usb_interface *intf)
 	struct dm96xx_priv* priv;
 	u8 temp;
 	u8 tmp;
+	u8 mac[ETH_ALEN];
+	u8 mac_addr[ETH_ALEN];
 
 	ret = usbnet_get_endpoints(dev, intf);
 	if (ret)
@@ -668,44 +678,54 @@ static int dm9620_bind(struct usbnet *dev, struct usb_interface *intf)
 	dev->mii.reg_num_mask = 0x1f;
 	dev->mii.phy_id = DM9620_PHY_ID;
 
-	printk("[dm962] Linux Driver = %s\n", LNX_DM9620_VER_STR);
+	printk("[dm9621] Linux Driver = %s\n", LNX_DM9620_VER_STR);
 //JJ1
-	if ( (ret= dm_read_reg(dev, 0x29, &tmp)) >=0)
-		printk("++++++[dm962]+++++ dm_read_reg() 0x29 0x%02x\n",tmp);
+	if ( (ret= dm_read_reg(dev, 0x29, &tmp)) >=0)    //Verdor ID high byte
+		printk("++++++[dm9621]+++++ dm_read_reg() Verdor ID high byte Register=0x29 0x%02x\n",tmp);
 	else
-		printk("++++++[dm962]+++++ dm_read_reg() 0x29 fail-func-return %d\n", ret);
+		printk("++++++[dm9621]+++++ dm_read_reg() 0x29 fail-func-return %d\n", ret);
 		
-	if ( (ret= dm_read_reg(dev, 0x28, &tmp)) >=0)
-		printk("++++++[dm962]+++++ dm_read_reg() 0x28 0x%02x\n",tmp);
+	if ( (ret= dm_read_reg(dev, 0x28, &tmp)) >=0)   //Verdor ID low byte
+		printk("++++++[dm9621]+++++ dm_read_reg()  Verdor ID low byte Register=0x28 0x%02x\n",tmp);
 	else
-		printk("++++++[dm962]+++++ dm_read_reg() 0x28 fail-func-return %d\n", ret);
+		printk("++++++[dm9621]+++++ dm_read_reg() 0x28 fail-func-return %d\n", ret);
 		
-	if ( (ret= dm_read_reg(dev, 0x2b, &tmp)) >=0)
-		printk("++++++[dm962]+++++ dm_read_reg() 0x2b 0x%02x\n",tmp);
+	if ( (ret= dm_read_reg(dev, 0x2b, &tmp)) >=0)    //Product ID higt byte
+		printk("++++++[dm9621]+++++ dm_read_reg() Product ID higt byte Register=0x2b 0x%02x\n",tmp);
 	else
-		printk("++++++[dm962]+++++ dm_read_reg() 0x2b fail-func-return %d\n", ret);
-	if ( (ret= dm_read_reg(dev, 0x2a, &tmp)) >=0)
-		printk("++++++[dm962]+++++ dm_read_reg() 0x2a 0x%02x\n",tmp);
+		printk("++++++[dm9621]+++++ dm_read_reg() 0x2b fail-func-return %d\n", ret);
+	if ( (ret= dm_read_reg(dev, 0x2a, &tmp)) >=0)	 //Product ID low byte
+		printk("++++++[dm9621]+++++ dm_read_reg() Product ID low byte Register=0x2a 0x%02x\n",tmp);
 	else
-		printk("++++++[dm962]+++++ dm_read_reg() 0x2a fail-func-return %d\n", ret);
+		printk("++++++[dm9621]+++++ dm_read_reg() 0x2a fail-func-return %d\n", ret);
 		
 //JJ3
 	if ( (ret= dm_read_reg(dev, 0xF2, &tmp)) >=0)
-		printk("++++++[dm962]+++++ dm_read_reg() 0xF2 0x%02x\n",tmp);
+		printk("++++++[dm9621]+++++ dm_read_reg()Transmit Packet COunter/USB Status Register Register=0xF2 0x%02x\n",tmp);
 	else
-		printk("++++++[dm962]+++++ dm_read_reg() 0xF2 fail-func-return %d\n", ret);
+		printk("++++++[dm9621]+++++ dm_read_reg() 0xF2 fail-func-return %d\n", ret);
 		
-		printk("++++++[dm962]+++++  [Analysis.2] 0xF2, D[7] %d %s\n", tmp>>7, (tmp&(1<<7))? "Err: RX Unexpected condition": "OK" );
-		printk("++++++[dm962]+++++  [Analysis.2] 0xF2, D[6] %d %s\n", (tmp>>6)&1, (tmp&(1<<6))? "Err: Host Suspend condition": "OK" );
-		printk("++++++[dm962]+++++  [Analysis.2] 0xF2, D[5] %d %s\n", (tmp>>5)&1, (tmp&(1<<5))? "EP1: Data Ready": "EP1: Empty" );
-		printk("++++++[dm962]+++++  [Analysis.2] 0xF2, D[3] %d %s\n", (tmp>>3)&1, (tmp&(1<<3))? "Err: Bulk out condition": "OK" );
+		printk("++++++[dm9621]+++++  [Analysis.2] 0xF2, D[7] %d %s\n", tmp>>7, (tmp&(1<<7))? "Err: RX Unexpected condition": "OK" );
+		printk("++++++[dm9621]+++++  [Analysis.2] 0xF2, D[6] %d %s\n", (tmp>>6)&1, (tmp&(1<<6))? "Err: Host Suspend condition": "OK" );
+		printk("++++++[dm9621]+++++  [Analysis.2] 0xF2, D[5] %d %s\n", (tmp>>5)&1, (tmp&(1<<5))? "EP1: Data Ready": "EP1: Empty" );
+		printk("++++++[dm9621]+++++  [Analysis.2] 0xF2, D[3] %d %s\n", (tmp>>3)&1, (tmp&(1<<3))? "Err: Bulk out condition": "OK" );
 		
-		printk("++++++[dm962]+++++  [Analysis.2] 0xF2, D[2] %d %s\n", (tmp>>2)&1, (tmp&(1<<2))? "Err: TX Buffer full": "OK" );
-		printk("++++++[dm962]+++++  [Analysis.2] 0xF2, D[1] %d %s\n", (tmp>>1)&1, (tmp&(1<<1))? "Warn: TX buffer Almost full": "OK" );
-		printk("++++++[dm962]+++++  [Analysis.2] 0xF2, D[0] %d %s\n", (tmp>>0)&1, (tmp&(1<<0))? "Status: TX buffer has pkts": "Status: TX buffer 0 pkts" );
+		printk("++++++[dm9621]+++++  [Analysis.2] 0xF2, D[2] %d %s\n", (tmp>>2)&1, (tmp&(1<<2))? "Err: TX Buffer full": "OK" );
+		printk("++++++[dm9621]+++++  [Analysis.2] 0xF2, D[1] %d %s\n", (tmp>>1)&1, (tmp&(1<<1))? "Warn: TX buffer Almost full": "OK" );
+		printk("++++++[dm9621]+++++  [Analysis.2] 0xF2, D[0] %d %s\n", (tmp>>0)&1, (tmp&(1<<0))? "Status: TX buffer has pkts": "Status: TX buffer 0 pkts" );
 
-	/* reset */
+	/* Reset */
+	/*
+		Software Reset
+		When write '1' to this bit, DM9621 enters software reset mode and will be
+		automatically cleared after 10us.
+		Write '0' to this bit can end the software reset mode
+	*/
+	//printk("#############################\n");
+	mdelay(1000);	
+	//printk("@@@@@@@@@@@@@@@@@@@@@@@\n");
 	dm_write_reg(dev, DM_NET_CTRL, 1);
+	
 	udelay(20);
 	//Stone add Enable "MAC layer" Flow Control, TX Pause Packet Enable and 
 	dm_write_reg(dev, DM_FLOW_CTRL, 0x29);
@@ -717,17 +737,41 @@ static int dm9620_bind(struct usbnet *dev, struct usb_interface *intf)
 	/* Add V1.1, Enable auto link while plug in RJ45, Hank July 20, 2009*/
 	dm_write_reg(dev, USB_CTRL, 0x20); 
 	/* read MAC */
-	if (dm_read(dev, DM_PHY_ADDR, ETH_ALEN, dev->net->dev_addr) < 0) {
+	if (dm_read(dev, DM_PHY_ADDR, ETH_ALEN, mac) < 0) {
 		printk(KERN_ERR "Error reading MAC address\n");
 		ret = -ENODEV;
 		goto out;
+	}		
+	printk("read MAC is: %0x:%0x:%0x:%0x:%0x:%0x\n",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+#if 1
+	mac_addr[0] = 0x86;
+	mac_addr[1] = 0x56;
+	mac_addr[2] = 0xCB;
+	mac_addr[3] = 0x2D;
+	mac_addr[4] = 0x3E;
+	mac_addr[5] = 0x7A;
+
+	if(is_valid_ether_addr(mac_addr)){
+		memcpy(dev->net->dev_addr, mac_addr, ETH_ALEN);
+		__dm9601_set_mac_address(dev);
+	}
+	/*
+	 * Overwrite the auto-generated address only with good ones.
+	 */
+	else if (is_valid_ether_addr(mac))
+		memcpy(dev->net->dev_addr, mac, ETH_ALEN);
+	else {
+		printk(KERN_WARNING
+			"dm9601: No valid MAC address in EEPROM, using %pM\n",
+			dev->net->dev_addr);
+		__dm9601_set_mac_address(dev);
 	}
 
-#if 1
-	 printk("[dm96] Chk mac addr %pM\n", dev->net->dev_addr);  // %x:%x...
-	 printk("[dm96] ");
+	 dm_read(dev, DM_PHY_ADDR, ETH_ALEN, dev->net->dev_addr);
+
+	 printk("[dm9621] Check mac addr %pM\n", dev->net->dev_addr);  
 	 for (i=0; i<ETH_ALEN; i++)
-	 printk("[%02x] ", dev->net->dev_addr[i]);
+		 printk("[%02x] ", dev->net->dev_addr[i]);
 	 printk("\n");
 #endif
 
@@ -742,10 +786,10 @@ static int dm9620_bind(struct usbnet *dev, struct usb_interface *intf)
         /* work-around for 9620 mode */
 	dm_read_reg(dev, 0x5c, &temp); 
 	priv->tx_fix_mod = temp;
-	printk(KERN_WARNING "[dm96] 9620 tx_fix_mod (DM9_NREV= %d)\n", priv->tx_fix_mod);
+	printk(KERN_WARNING "[dm962x] 9620 tx_fix_mod (DM9_NREV= %d)\n", priv->tx_fix_mod);
 
-	printk("[dm96] Fixme: work around for 9620 mode\n");
-	printk("[dm96] Add tx_fixup() debug...\n");
+	printk("[dm962x] Fixme: work around for 9620 mode\n");
+	printk("[dm962x] Add tx_fixup() debug...\n");
 	dm_write_reg(dev, DM_MCAST_ADDR, 0);     // clear data bus to 0s
 	dm_read_reg(dev, DM_MCAST_ADDR, &temp);  // clear data bus to 0s
 	ret = dm_read_reg(dev, DM_SMIREG, &temp);   // Must clear data bus before we can read the 'MODE9620' bit
