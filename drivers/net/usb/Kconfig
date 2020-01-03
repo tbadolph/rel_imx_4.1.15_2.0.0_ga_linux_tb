@@ -166,7 +166,7 @@ config USB_NET_AX8817X
 	    * ST Lab USB 2.0 Ethernet
 	    * TrendNet TU2-ET100
 
-	  This driver creates an interface named "ethX", where X depends on
+	  This driver creates an interface named "ethX", where X depends on 
 	  what other networking devices you have in use.
 
 config USB_NET_AX88179_178A

@@ -647,7 +647,8 @@ static const struct net_device_ops vm_netdev_ops= { // new kernel 2.6.31  (20091
 
 static int dm9620_bind(struct usbnet *dev, struct usb_interface *intf)
 {
-  u16 *tmpwPtr2;
+	printk("@@@@@@@@@@@@@@@@@@dm9620_bind...\n");
+  	u16 *tmpwPtr2;
 	int ret,mdio_val,i;
 	struct dm96xx_priv* priv;
 	u8 temp;
@@ -721,7 +722,7 @@ static int dm9620_bind(struct usbnet *dev, struct usb_interface *intf)
 		automatically cleared after 10us.
 		Write '0' to this bit can end the software reset mode
 	*/
-	//printk("#############################\n");
+	
 	mdelay(1000);	
 	//printk("@@@@@@@@@@@@@@@@@@@@@@@\n");
 	dm_write_reg(dev, DM_NET_CTRL, 1);
@@ -732,7 +733,16 @@ static int dm9620_bind(struct usbnet *dev, struct usb_interface *intf)
 	//Stone add Enable "PHY layer" Flow Control support (phy register 0x04 bit 10)
 	temp = dm9620_mdio_read(dev->net, dev->mii.phy_id, 0x04);
 	dm9620_mdio_write(dev->net, dev->mii.phy_id, 0x04, temp | 0x400);
-	
+#if 0
+	dm_write_reg(dev, 0x0F, 0x7F);	  //Tbao 
+
+	ret= dm_read_reg(dev, 0x00, &tmp);
+		tmp |= 1 << 6;
+		printk("####tmp is 0x%2x\n",tmp);
+	dm_write_reg(dev, 0x00, tmp);
+	dm_read_reg(dev, 0x00, &tmp);
+	printk("####tmp is 0x%2x\n",tmp);
+#endif	
 
 	/* Add V1.1, Enable auto link while plug in RJ45, Hank July 20, 2009*/
 	dm_write_reg(dev, USB_CTRL, 0x20); 
@@ -807,7 +817,7 @@ static int dm9620_bind(struct usbnet *dev, struct usb_interface *intf)
 	{
 	 dm_read_reg(dev, 0x3f, &temp);
 	 temp |= 0x80; 
-   dm_write_reg(dev, 0x3f, temp);
+   	 dm_write_reg(dev, 0x3f, temp);
    }
   
   //Stone add for check Product ID == 0x1269
@@ -1185,7 +1195,33 @@ static void dm9620_status(struct usbnet *dev, struct urb *urb)
 {
 	int link;
 	u8 *buf;
+#if 0
+	//printk("dm9620_status...\n ");
+	u8 tmp;
+	u8 ret;
+	if ( (ret= dm_read_reg(dev, 0x82, &tmp)) >=0)    
+		printk("dm_read_reg() USB Packet Err Counter Register=0x82: 0x%02x\n",tmp);
+	else
+		printk("dm_read_reg() 0x82 fail-func-return %d\n", ret);
 
+	if ( (ret= dm_read_reg(dev, 0x0F, &tmp)) >=0)    
+		printk("dm_read_reg() Wake up  Register=0x0F: 0x%02x\n",tmp);
+	else
+		printk("dm_read_reg() 0FH fail-func-return %d\n", ret);
+
+	if ( (ret= dm_read_reg(dev, 0xF2, &tmp)) >=0)    
+		printk("dm_read_reg()USB Status Register=0xF2: 0x%02x\n",tmp);
+	else
+		printk("dm_read_reg() F2H fail-func-return %d\n", ret);
+
+	if ( (ret= dm_read_reg(dev, 0xb, &tmp)) >=0)    
+		printk("dm_read_reg()EEPROM& PHY Control Register=0BH: 0x%02x\n",tmp);
+	
+	if ( (ret= dm_read_reg(dev, 0x0, &tmp)) >=0)    
+		printk("dm_read_reg() Register=0H: 0x%02x\n",tmp);
+	if ( (ret= dm_read_reg(dev, 0x01, &tmp)) >=0)    
+		printk("dm_read_reg() Network Status Register=01H: 0x%02x\n",tmp);
+#endif		
 	/* format:
 	   b0: net status
 	   b1: tx status 1
@@ -1217,10 +1253,11 @@ static void dm9620_status(struct usbnet *dev, struct urb *urb)
 static int dm9620_link_reset(struct usbnet *dev)
 {
 	struct ethtool_cmd ecmd;
+	
 	mii_check_media(&dev->mii, 1, 1);
 	mii_ethtool_gset(&dev->mii, &ecmd);
 	/* hank add*/
-dm9620_mdio_write(dev->net, dev->mii.phy_id, PHY_SPEC_CFG, 0x800);
+	dm9620_mdio_write(dev->net, dev->mii.phy_id, PHY_SPEC_CFG, 0x800);
 	dm9620_print(dev, "link_reset() speed: %d duplex: %d",
 	       ecmd.speed, ecmd.duplex);      
 	

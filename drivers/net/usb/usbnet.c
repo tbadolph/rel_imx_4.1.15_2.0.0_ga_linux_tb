@@ -1770,7 +1770,7 @@ EXPORT_SYMBOL_GPL(usbnet_probe);
 int usbnet_suspend (struct usb_interface *intf, pm_message_t message)
 {
 	struct usbnet		*dev = usb_get_intfdata(intf);
-
+	printk("@@@@  usbnet_suspend  @@@@\n");  //Tbao
 	if (!dev->suspend_count++) {
 		spin_lock_irq(&dev->txq.lock);
 		/* don't autosuspend while transmitting */
@@ -1806,7 +1806,7 @@ int usbnet_resume (struct usb_interface *intf)
 	struct sk_buff          *skb;
 	struct urb              *res;
 	int                     retval;
-
+	printk("@@ usbnet_resume @@\n");
 	if (!--dev->suspend_count) {
 		/* resume interrupt URB if it was previously submitted */
 		__usbnet_status_start_force(dev, GFP_NOIO);
